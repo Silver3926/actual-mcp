@@ -3,10 +3,10 @@ FROM node:22-alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --production
+# IMPORTANT: upgrade Actual API to latest
+RUN npm install @actual-app/api@latest
 
-# Force upgrade safely after install
-RUN npm update @actual-app/api
+RUN npm install
 
 COPY . .
 
