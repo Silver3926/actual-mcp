@@ -1,30 +1,16 @@
-# ---- Builder ----
-FROM node:22-alpine AS builder
+FROM node:22-alpine
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm npm ci
+COPY package*.json ./
+RUN npm install --production
 
-COPY . ./
-RUN npm run build
+# Force upgrade safely after install
+RUN npm update @actual-app/api
 
-# ---- Release ----
-FROM node:22-alpine AS release
+COPY . .
 
-WORKDIR /app
+ENV PORT=8080
+EXPOSE 8080
 
-COPY --from=builder /app/package.json ./
-COPY --from=builder /app/package-lock.json ./
-COPY --from=builder /app/build ./build
-
-ENV NODE_ENV=production
-RUN TMPDIR=$(mktemp -d)
-ENV TMPDIR=$TMPDIR
-
-RUN npm ci --omit=dev
-
-RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev
-
-EXPOSE 3000
-ENTRYPOINT ["node", "build/index.js"]
+CMD ["sh","-c","npm start -- --port=$PORT --sse --enable-write"]
